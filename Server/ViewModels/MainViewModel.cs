@@ -83,7 +83,7 @@ namespace Server.ViewModels
         public async void StartAction()
         {
             var localIP = IPAddress.Parse(GetLocalIPAddress());
-            var port = 80;
+            var port = 26000;
 
             using (var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.IP))
             {
@@ -105,17 +105,14 @@ namespace Server.ViewModels
                          {
                              length = client.Receive(bytes);
                              jsonString = Encoding.UTF8.GetString(bytes);
-
-                             if (IsValidJson(jsonString))
-                                 ClientItem = FileHelper<Item>.Deserialize(jsonString);
-                             
-                             if (!ClientItems.Any(c => c.ImagePath == ClientItem.ImagePath))
+                             var a = jsonString.Length;
+        
+                             ClientItem = FileHelper<Item>.Deserialize(jsonString);
+                             App.Current.Dispatcher.Invoke((Action)delegate // <--- HERE
                              {
-                                 App.Current.Dispatcher.Invoke((Action)delegate // <--- HERE
-                                 {
-                                     ClientItems.Add(ClientItem);
-                                 });
-                             }
+                                 ClientItems.Add(ClientItem);
+                             });
+
 
 
                          } while (true);
