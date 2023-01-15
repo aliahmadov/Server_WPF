@@ -1,4 +1,6 @@
-﻿using Server.Commands;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Server.Commands;
 using Server.Helpers;
 using Server.Models;
 using System;
@@ -29,6 +31,8 @@ namespace Server.ViewModels
         }
 
 
+        public bool IsLoaded { get; set; }
+
         public string GetLocalIPAddress()
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
@@ -43,6 +47,35 @@ namespace Server.ViewModels
             return null;
         }
 
+        private static bool IsValidJson(string strInput)
+        {
+            if (string.IsNullOrWhiteSpace(strInput)) { return false; }
+            strInput = strInput.Trim();
+            if ((strInput.StartsWith("{") && strInput.EndsWith("}")) || //For object
+                (strInput.StartsWith("[") && strInput.EndsWith("]"))) //For array
+            {
+                try
+                {
+                    var obj = JToken.Parse(strInput);
+                    return true;
+                }
+                catch (JsonReaderException jex)
+                {
+                    //Exception in parsing json
+                    Console.WriteLine(jex.Message);
+                    return false;
+                }
+                catch (Exception ex) //some other exception
+                {
+                    Console.WriteLine(ex.ToString());
+                    return false;
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
 
 
 
@@ -65,14 +98,25 @@ namespace Server.ViewModels
                      {
                          MessageBox.Show($"{client.RemoteEndPoint} connected");
                          var length = 0;
-                         var bytes = new byte[1024 * 128];
+                         var bytes = new byte[1024];
 
+                         string jsonString;
                          do
                          {
                              length = client.Receive(bytes);
-                             var jsonString = Encoding.UTF8.GetString(bytes, 0, length);
-                             ClientItem = FileHelper<Item>.Deserialize(jsonString) as Item;
-                             ClientItems.Add(ClientItem);
+                             jsonString = Encoding.UTF8.GetString(bytes);
+
+                             if (IsValidJson(jsonString))
+                                 ClientItem = FileHelper<Item>.Deserialize(jsonString);
+                             
+                             if (!ClientItems.Any(c => c.ImagePath == ClientItem.ImagePath))
+                             {
+                                 App.Current.Dispatcher.Invoke((Action)delegate // <--- HERE
+                                 {
+                                     ClientItems.Add(ClientItem);
+                                 });
+                             }
+
 
                          } while (true);
 
@@ -85,6 +129,7 @@ namespace Server.ViewModels
 
         public MainViewModel()
         {
+            ClientItems = new ObservableCollection<Item>();
             StartCommand = new RelayCommand((c) =>
             {
                 StartAction();

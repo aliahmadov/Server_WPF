@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Server.Helpers
 {
-    public class FileHelper<T> where T : class
+    public class FileHelper<T>
     {
         public static string Serialize(T myObject)
         {
@@ -15,9 +15,9 @@ namespace Server.Helpers
 
         }
 
-        public static object Deserialize(string str)
+        public static T Deserialize(string str)
         {
-            return JsonConvert.DeserializeObject(str);
+            return JsonConvert.DeserializeObject<T>(str);
         }
     }
 }
