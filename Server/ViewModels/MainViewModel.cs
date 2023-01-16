@@ -6,6 +6,9 @@ using Server.Models;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -17,6 +20,8 @@ namespace Server.ViewModels
 {
     public class MainViewModel : BaseViewModel
     {
+        public int Id { get; set; }
+
         public RelayCommand StartCommand { get; set; }
 
         public Item ClientItem { get; set; }
@@ -32,6 +37,8 @@ namespace Server.ViewModels
 
 
         public bool IsLoaded { get; set; }
+
+
 
         public string GetLocalIPAddress()
         {
@@ -85,7 +92,7 @@ namespace Server.ViewModels
             {
                 MessageBox.Show($"{client.RemoteEndPoint} connected");
                 var length = 0;
-                var bytes = new byte[1024];
+                var bytes = new byte[1024 * 1024 * 128];
 
                 string jsonString;
                 do
@@ -103,9 +110,14 @@ namespace Server.ViewModels
                     }
 
                     jsonString = Encoding.UTF8.GetString(bytes);
-                    var a = jsonString.Length;
 
                     ClientItem = FileHelper<Item>.Deserialize(jsonString);
+
+                    Image image = Converter.byteArrayToImage(ClientItem.ImageBytes);
+                    var bitmap = new Bitmap(image);  
+                    string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                    bitmap.Save(desktopPath + $@"\serverImages\Picture{Id++}.jpg",ImageFormat.Jpeg);
+                    
                     App.Current.Dispatcher.Invoke((Action)delegate // <--- HERE
                     {
                         ClientItems.Add(ClientItem);
@@ -140,6 +152,11 @@ namespace Server.ViewModels
 
         public MainViewModel()
         {
+            string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            if (!Directory.Exists(desktopPath + @"\serverImages"))
+            {
+                Directory.CreateDirectory(desktopPath + @"\serverImages");
+            }
             ClientItems = new ObservableCollection<Item>();
             StartCommand = new RelayCommand((c) =>
             {

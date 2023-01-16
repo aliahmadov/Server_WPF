@@ -36,7 +36,7 @@
                                 <ColumnDefinition Width="2*"/>
                             </Grid.ColumnDefinitions>
                             <Image Grid.Column="0" Width="300" RenderOptions.BitmapScalingMode="HighQuality" 
-                                   Source="{Binding ImagePath}" Stretch="Uniform" ></Image>
+                                   Source="{Binding ImageBytes}" Stretch="Uniform" ></Image>
                             <StackPanel Margin="0,20,0,0" Grid.Column="1">
                                 <TextBlock Margin="5" FontSize="20" FontWeight="DemiBold"
                                           FontStyle="Italic" Text="{Binding Title}" ></TextBlock>
