@@ -79,6 +79,43 @@ namespace Server.ViewModels
 
 
 
+        public async void ReceiveMessages(Socket client)
+        {
+            await Task.Run(() =>
+            {
+                MessageBox.Show($"{client.RemoteEndPoint} connected");
+                var length = 0;
+                var bytes = new byte[1024];
+
+                string jsonString;
+                do
+                {
+
+                    try
+                    {
+                        length = client.Receive(bytes);
+
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show($@"{client.RemoteEndPoint} closed connection");
+                        break;
+                    }
+
+                    jsonString = Encoding.UTF8.GetString(bytes);
+                    var a = jsonString.Length;
+
+                    ClientItem = FileHelper<Item>.Deserialize(jsonString);
+                    App.Current.Dispatcher.Invoke((Action)delegate // <--- HERE
+                    {
+                        ClientItems.Add(ClientItem);
+                    });
+
+                } while (true);
+
+            });
+        }
+
 
         public async void StartAction()
         {
@@ -94,30 +131,7 @@ namespace Server.ViewModels
                 while (true)
                 {
                     var client = await socket.AcceptAsync();
-                    await Task.Run(() =>
-                     {
-                         MessageBox.Show($"{client.RemoteEndPoint} connected");
-                         var length = 0;
-                         var bytes = new byte[1024];
-
-                         string jsonString;
-                         do
-                         {
-                             length = client.Receive(bytes);
-                             jsonString = Encoding.UTF8.GetString(bytes);
-                             var a = jsonString.Length;
-        
-                             ClientItem = FileHelper<Item>.Deserialize(jsonString);
-                             App.Current.Dispatcher.Invoke((Action)delegate // <--- HERE
-                             {
-                                 ClientItems.Add(ClientItem);
-                             });
-
-
-
-                         } while (true);
-
-                     });
+                    ReceiveMessages(client);
                 }
 
 
